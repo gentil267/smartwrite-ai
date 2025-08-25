@@ -1,0 +1,51 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import openai  # We'll use Groq for free credits, but the code structure is similar
+
+# Initialize FastAPI app
+app = FastAPI()
+
+# Allow frontend to communicate with backend (Very important!)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "https://smartwrite-ai.vercel.app"],  # Your frontend URLs
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Define what data we expect from the frontend
+class TextRequest(BaseModel):
+    text: str
+    action: str  # e.g., "grammar", "tone_professional", "translate_english"
+
+# This is your main API endpoint
+@app.post("/api/improve-text")
+async def improve_text(request: TextRequest):
+    # Define prompts for different actions
+    prompts = {
+        "grammar": f"Correct the grammar and spelling of this text, return only the improved text with no other commentary:\n{request.text}",
+        "tone_professional": f"Rewrite this text to sound more professional and formal, return only the rewritten text:\n{request.text}",
+        "translate_english": f"Translate this text to English, return only the translation:\n{request.text}",
+    }
+
+    # Get the right prompt for the action
+    prompt = prompts.get(request.action, prompts["grammar"])
+
+    # IN A REAL APP, YOU'D USE AN API KEY HERE. FOR NOW, WE'LL SIMULATE A RESPONSE.
+    # api_key = "your-api-key-here"  # You would get this from Groq/OpenAI website
+    # openai.api_key = api_key
+    # response = openai.ChatCompletion.create(...)
+
+    # SIMULATED RESPONSE FOR DEMO - DELETE THIS AND UNCOMMENT ABOVE CODE LATER
+    simulated_responses = {
+        "grammar": request.text + " (grammar corrected)",
+        "tone_professional": request.text + " (sounding more professional)",
+        "translate_english": "This is a translated text.",
+    }
+    improved_text = simulated_responses.get(request.action, "Action not recognized.")
+
+    return {"improvedText": improved_text}
+
+# To run the server: uvicorn main:app --reload --port 8000
